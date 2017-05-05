@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+
+<div id="mapid"></div>
+<!-- <script src='http://code.jquery.com/jquery-2.0.3.js'></script> -->
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<!-- <script src="http://d3js.org/topojson.v0.min.js"></script> -->
+<!-- <script src="worldtopo.js"></script> -->
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
+integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ=="
+crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"
+   integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg=="
+   crossorigin=""></script>
+
+<style>
+
+#mapid { height: 600px; }
+
+</style>
+
+<script>
+var data;
+var CoM;
+var mymap = L.map('mapid').setView([51.505, -0.09], 13)//default view position and zoom
+var layers = new Array();
+var reresh_time = 1000;
+
+
+//loads the data from the flask server
+window.setInterval(function(){
+  d3.json("/data", testfunc)
+}, reresh_time);
+//d3.json("/data", testfunc);
+
+function testfunc(error, json) {
+    if (error){ 
+        reresh_time = reresh_time + 5000;
+        return console.warn(error);}
+    data = json;
+    console.log("LOADED DATA");
+  console.log(data);
+  
+  //initialize the Center of Mass for our viewing to be the first datapoint
+  if (typeof CoM == 'undefined'){
+      console.log("Setting CoM");
+      CoM = [Number(data.y),Number(data.x)];
+      console.log(CoM);
+      mymap.setView(CoM, 13);
+  }
+  addMarker(data);
+  //don't use a for-each because it's almost an order of magnitude slower
+  for (var i = 0, len = layers.length; i < len; i++) {
+        render_marker(layers[i]);
+    }
+}
+
+function addMarker(data){
+//var marker = L.marker(loc);//.addTo(mymap);
+//marker.bindPopup("<b>Hello world!</b><br>I am a popup.");
+//marker.addTo(mymap);
+//layers.push(marker);
+layers.push(L.marker([Number(data.y),Number(data.x)]).bindPopup("Type: " + data.name + "<br>x: " + data.x + " <br>y: " + data.y + "<br>state: " + data.state + "<br>time: "+ data.time));
+}
+
+function render_marker(m){
+m.addTo(mymap);
+}
+
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    maxZoom: 18,
+    id: 'mapbox.satellite',
+    accessToken: 'pk.eyJ1IjoicnlhbnN0ZXBhbmVrIiwiYSI6ImNqMmIzeGp3ZzAwbDIzM3Fyb2lrdmhiYWQifQ.dxKq1wQUTFnPwX9MRye6hA'
+}).addTo(mymap);
+
+
+//Testing of layer filtering, not currently working in chrome; inconsistent behavior on firefox
+<!-- var littleton = L.marker([51.5, -0.09]).bindPopup('This is Littleton, CO.'), -->
+    <!-- denver    = L.marker([51.4, -0.08]).bindPopup('This is Denver, CO.'), -->
+    <!-- aurora    = L.marker([51.6, -0.07]).bindPopup('This is Aurora, CO.'), -->
+    <!-- golden    = L.marker([51.3, -0.09]).bindPopup('This is Golden, CO.'); -->
+
+<!-- var cities = L.layerGroup([littleton, denver, aurora, golden]); -->
+<!-- var t_sites = L.layerGroup([littleton, denver, aurora, golden]); -->
+<!-- addMarker([51.5, -0.07]); -->
+<!-- addMarker([51.6, -0.09]); -->
+<!-- addMarker([51.4, -0.08]); -->
+
+
+
+<!-- var overlayMaps = { -->
+    <!-- "Cities": cities,//, -->
+    <!-- "Testing":L.layerGroup(layers) -->
+<!-- }; -->
+
+<!-- L.control.layers(null, overlayMaps).addTo(mymap); -->
+
+
+</script>
